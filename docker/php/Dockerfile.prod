@@ -1,0 +1,24 @@
+FROM php:8.4-fpm-alpine
+
+RUN apk add --no-cache \
+    bash \
+    git \
+    icu-dev \
+    libzip-dev \
+    oniguruma-dev \
+    postgresql-dev \
+    unzip \
+    && docker-php-ext-install pdo pdo_pgsql intl opcache
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/backend
+
+COPY backend/composer.json backend/composer.lock ./
+RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+COPY backend ./
+
+ENV APP_ENV=prod
+
+CMD ["php-fpm"]

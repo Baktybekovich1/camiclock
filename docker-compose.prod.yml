@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: camiclock-db-prod
+    environment:
+      POSTGRES_DB: camiclock
+      POSTGRES_USER: camiclock
+      POSTGRES_PASSWORD: camiclock
+    volumes:
+      - db_data_prod:/var/lib/postgresql/data
+
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile.prod
+    container_name: camiclock-php-prod
+    environment:
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET:-change_me_prod_secret}
+      DATABASE_URL: postgresql://camiclock:camiclock@db:5432/camiclock?serverVersion=16&charset=utf8
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:1.29-alpine
+    container_name: camiclock-nginx-prod
+    ports:
+      - '80:80'
+    volumes:
+      - ./backend:/var/www/backend:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php
+
+  frontend:
+    image: node:22-alpine
+    container_name: camiclock-frontend-prod
+    working_dir: /app/frontend
+    command: sh -c "npm ci && npm run build && npm run preview -- --host 0.0.0.0 --port 4173"
+    ports:
+      - '4173:4173'
+    volumes:
+      - ./frontend:/app/frontend
+    environment:
+      VITE_API_URL: http://localhost
+
+volumes:
+  db_data_prod:
