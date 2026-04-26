@@ -42,6 +42,26 @@ Note:
 - Ensure `backend/config/jwt/private.pem` and `backend/config/jwt/public.pem` exist.
 - If you change `JWT_PASSPHRASE`, regenerate keys with `php bin/console lexik:jwt:generate-keypair --overwrite`.
 
+### Domain Setup (`up.camicklock.tw1.su`)
+- Production containers bind only to localhost:
+  - Backend API: `127.0.0.1:8080`
+  - Frontend preview: `127.0.0.1:4173`
+- Frontend API URL is configured as:
+  - `VITE_API_URL=https://up.camicklock.tw1.su`
+
+Use the provided Caddy config from:
+- `deploy/caddy/Caddyfile`
+
+Install Caddy on the server and place this file into `/etc/caddy/Caddyfile`,
+then reload Caddy:
+```bash
+sudo systemctl reload caddy
+```
+
+The config routes:
+- `https://up.camicklock.tw1.su/api/*` -> Symfony (`127.0.0.1:8080`)
+- all other traffic -> Frontend (`127.0.0.1:4173`)
+
 ## Environment
 Frontend can override API URL:
 - `frontend/.env` with `VITE_API_URL=http://localhost:8080`
