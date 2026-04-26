@@ -57,6 +57,11 @@ export const camiclockApi = {
     return data
   },
 
+  timerManual: async (payload: { categoryId: number; durationMinutes: number }) => {
+    const { data } = await api.post('/api/timers/manual', payload)
+    return data
+  },
+
   timerRunning: async () => {
     const { data } = await api.get('/api/timers/running')
     return data.entry as null | {

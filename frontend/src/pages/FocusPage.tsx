@@ -18,6 +18,8 @@ export const FocusPage = () => {
   }>(null)
   const [, setTick] = useState(0)
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0)
+  const [manualCategoryId, setManualCategoryId] = useState<number>(0)
+  const [manualMinutes, setManualMinutes] = useState<number>(20)
   const [isMobile, setIsMobile] = useState<boolean>(false)
 
   const load = useCallback(async () => {
@@ -34,7 +36,10 @@ export const FocusPage = () => {
     if (cats.length > 0 && selectedCategoryId === 0) {
       setSelectedCategoryId(cats[0].id)
     }
-  }, [periodType, selectedCategoryId])
+    if (cats.length > 0 && manualCategoryId === 0) {
+      setManualCategoryId(cats[0].id)
+    }
+  }, [periodType, selectedCategoryId, manualCategoryId])
 
   useEffect(() => {
     load().catch(() => null)
@@ -71,6 +76,20 @@ export const FocusPage = () => {
     await load()
   }
 
+  const addManualTime = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!manualCategoryId || manualMinutes <= 0) {
+      return
+    }
+
+    await camiclockApi.timerManual({
+      categoryId: manualCategoryId,
+      durationMinutes: manualMinutes,
+    })
+
+    await load()
+  }
+
   const chartData = useMemo(
     () =>
       (summary?.categories ?? []).map((item) => ({
@@ -81,6 +100,12 @@ export const FocusPage = () => {
       })),
     [summary],
   )
+
+  const mobilePieData = chartData.filter((entry) => entry.spentHours > 0)
+  const totalProgressPercent =
+    summary && summary.totalTargetSeconds > 0
+      ? Math.min(100, Math.round((summary.totalSpentSeconds / summary.totalTargetSeconds) * 100))
+      : 0
 
   return (
     <div className="dashboard-grid">
@@ -134,31 +159,61 @@ export const FocusPage = () => {
             </button>
           )}
         </div>
+
+        <form className="inline-form" onSubmit={addManualTime}>
+          <label className="select-wrap">
+            <span>Добавить вручную</span>
+            <select value={manualCategoryId} onChange={(e) => setManualCategoryId(Number(e.target.value))}>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="select-wrap">
+            <span>Минут</span>
+            <input
+              type="number"
+              min={1}
+              max={1440}
+              value={manualMinutes}
+              onChange={(e) => setManualMinutes(Number(e.target.value))}
+            />
+          </label>
+          <button className="ghost-btn" type="submit">
+            Добавить время
+          </button>
+        </form>
       </section>
 
       <motion.section className="card wide" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
         <h2>{isMobile ? 'Распределение фокуса' : 'Сравнение факт/план'}</h2>
         <div className="chart-box">
           {isMobile ? (
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart>
-                <Pie
-                  data={chartData.filter((entry) => entry.spentHours > 0)}
-                  dataKey="spentHours"
-                  nameKey="name"
-                  innerRadius={70}
-                  outerRadius={105}
-                  paddingAngle={3}
-                >
-                  {chartData
-                    .filter((entry) => entry.spentHours > 0)
-                    .map((entry) => (
+            <div className="pie-wrap">
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie
+                    data={mobilePieData}
+                    dataKey="spentHours"
+                    nameKey="name"
+                    innerRadius={70}
+                    outerRadius={105}
+                    paddingAngle={3}
+                  >
+                    {mobilePieData.map((entry) => (
                       <Cell key={`mobile-spent-${entry.name}`} fill={entry.color} />
                     ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pie-center">
+                <strong>{formatSeconds(summary?.totalSpentSeconds ?? 0)}</strong>
+                <span>{totalProgressPercent}% к плану</span>
+              </div>
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height={320}>
               <BarChart data={chartData}>
@@ -177,16 +232,14 @@ export const FocusPage = () => {
         </div>
         {isMobile && (
           <ul className="plain-list">
-            {chartData
-              .filter((entry) => entry.spentHours > 0)
-              .map((entry) => (
-                <li key={`legend-${entry.name}`}>
-                  <span>
-                    <em style={{ color: entry.color }}>{entry.name}</em>
-                  </span>
-                  <strong>{entry.spentHours} ч</strong>
-                </li>
-              ))}
+            {mobilePieData.map((entry) => (
+              <li key={`legend-${entry.name}`}>
+                <span>
+                  <em style={{ color: entry.color }}>{entry.name}</em>
+                </span>
+                <strong>{formatSeconds(Math.round(entry.spentHours * 3600))}</strong>
+              </li>
+            ))}
           </ul>
         )}
       </motion.section>

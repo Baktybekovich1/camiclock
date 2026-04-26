@@ -356,6 +356,34 @@ textarea {
   height: 220px;
 }
 
+.pie-wrap {
+  position: relative;
+  width: 100%;
+  height: 320px;
+}
+
+.pie-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+}
+
+.pie-center strong {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.05rem;
+  color: #5b21b6;
+}
+
+.pie-center span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .table-wrap {
   overflow-x: auto;
 }

@@ -95,6 +95,43 @@ class TimerController extends ApiController
         ]);
     }
 
+    #[Route('/manual', name: 'api_timer_manual', methods: ['POST'])]
+    public function manual(Request $request)
+    {
+        $data = $this->parseJson($request);
+        $categoryId = (int) ($data['categoryId'] ?? 0);
+        $durationMinutes = (int) ($data['durationMinutes'] ?? 0);
+
+        $category = $this->categoryRepository->find($categoryId);
+        if (!$category || $category->getUser()->getId() !== $this->currentUser()->getId()) {
+            return $this->jsonError('Категория не найдена.', Response::HTTP_NOT_FOUND);
+        }
+
+        if ($durationMinutes <= 0 || $durationMinutes > 1440) {
+            return $this->jsonError('Укажите длительность от 1 до 1440 минут.');
+        }
+
+        $durationSeconds = $durationMinutes * 60;
+        $endedAt = new \DateTimeImmutable();
+        $startedAt = $endedAt->modify(sprintf('-%d seconds', $durationSeconds));
+
+        $entry = (new TimerEntry())
+            ->setUser($this->currentUser())
+            ->setCategory($category)
+            ->setStartedAt($startedAt)
+            ->setEndedAt($endedAt)
+            ->setDurationSeconds($durationSeconds);
+
+        $this->entityManager->persist($entry);
+        $this->entityManager->flush();
+
+        return $this->jsonSuccess([
+            'message' => 'Время добавлено вручную.',
+            'entryId' => $entry->getId(),
+            'durationSeconds' => $durationSeconds,
+        ], Response::HTTP_CREATED);
+    }
+
     #[Route('', name: 'api_timer_list', methods: ['GET'])]
     public function list(Request $request)
     {
