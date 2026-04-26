@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { camiclockApi } from '../api/camiclockApi'
 import type { Category, DashboardSummary } from '../types'
 import { elapsedFrom, formatSeconds } from '../utils/time'
@@ -18,6 +18,7 @@ export const FocusPage = () => {
   }>(null)
   const [, setTick] = useState(0)
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0)
+  const [isMobile, setIsMobile] = useState<boolean>(false)
 
   const load = useCallback(async () => {
     const [sum, cats, run] = await Promise.all([
@@ -47,6 +48,17 @@ export const FocusPage = () => {
     const id = window.setInterval(() => setTick((v) => v + 1), 1000)
     return () => window.clearInterval(id)
   }, [running])
+
+  useEffect(() => {
+    const updateMobileState = () => {
+      setIsMobile(window.innerWidth <= 900)
+    }
+
+    updateMobileState()
+    window.addEventListener('resize', updateMobileState)
+
+    return () => window.removeEventListener('resize', updateMobileState)
+  }, [])
 
   const startTimer = async () => {
     if (!selectedCategoryId) return
@@ -125,22 +137,58 @@ export const FocusPage = () => {
       </section>
 
       <motion.section className="card wide" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-        <h2>Сравнение факт/план</h2>
+        <h2>{isMobile ? 'Распределение фокуса' : 'Сравнение факт/план'}</h2>
         <div className="chart-box">
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={chartData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="spentHours" radius={[8, 8, 0, 0]}>
-                {chartData.map((entry) => (
-                  <Cell key={`spent-${entry.name}`} fill={entry.color} />
-                ))}
-              </Bar>
-              <Bar dataKey="targetHours" fill="#D8B4FE" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {isMobile ? (
+            <ResponsiveContainer width="100%" height={320}>
+              <PieChart>
+                <Pie
+                  data={chartData.filter((entry) => entry.spentHours > 0)}
+                  dataKey="spentHours"
+                  nameKey="name"
+                  innerRadius={70}
+                  outerRadius={105}
+                  paddingAngle={3}
+                >
+                  {chartData
+                    .filter((entry) => entry.spentHours > 0)
+                    .map((entry) => (
+                      <Cell key={`mobile-spent-${entry.name}`} fill={entry.color} />
+                    ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={chartData}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="spentHours" radius={[8, 8, 0, 0]}>
+                  {chartData.map((entry) => (
+                    <Cell key={`spent-${entry.name}`} fill={entry.color} />
+                  ))}
+                </Bar>
+                <Bar dataKey="targetHours" fill="#D8B4FE" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
+        {isMobile && (
+          <ul className="plain-list">
+            {chartData
+              .filter((entry) => entry.spentHours > 0)
+              .map((entry) => (
+                <li key={`legend-${entry.name}`}>
+                  <span>
+                    <em style={{ color: entry.color }}>{entry.name}</em>
+                  </span>
+                  <strong>{entry.spentHours} ч</strong>
+                </li>
+              ))}
+          </ul>
+        )}
       </motion.section>
 
       <section className="card wide">
