@@ -2,8 +2,36 @@ import { useCallback, useEffect, useState } from 'react'
 import { camiclockApi } from '../api/camiclockApi'
 import type { Category, DashboardSummary, Plan } from '../types'
 import { formatSeconds } from '../utils/time'
+import { useSettings } from '../context/SettingsContext'
+
+const text = {
+  en: {
+    title: 'Category Plans',
+    day: 'Day',
+    week: 'Week',
+    category: 'Category',
+    minutes: 'minutes',
+    save: 'Save plan',
+    fact: 'Actual',
+    min: 'min',
+    delete: 'Delete',
+  },
+  ru: {
+    title: 'Планы по категориям',
+    day: 'День',
+    week: 'Неделя',
+    category: 'Категория',
+    minutes: 'минут',
+    save: 'Сохранить план',
+    fact: 'Факт',
+    min: 'мин',
+    delete: 'Удалить',
+  },
+} as const
 
 export const PlansPage = () => {
+  const { locale } = useSettings()
+  const t = text[locale]
   const [periodType, setPeriodType] = useState<'day' | 'week'>('day')
   const [plans, setPlans] = useState<Plan[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -52,20 +80,20 @@ export const PlansPage = () => {
   return (
     <section className="card">
       <div className="inline-between">
-        <h2>Планы по категориям</h2>
+        <h2>{t.title}</h2>
         <div className="toggle-wrap">
           <button className={periodType === 'day' ? 'toggle active' : 'toggle'} onClick={() => setPeriodType('day')}>
-            День
+            {t.day}
           </button>
           <button className={periodType === 'week' ? 'toggle active' : 'toggle'} onClick={() => setPeriodType('week')}>
-            Неделя
+            {t.week}
           </button>
         </div>
       </div>
 
       <form className="inline-form" onSubmit={savePlan}>
         <label className="select-wrap">
-          <span>Категория</span>
+          <span>{t.category}</span>
           <select value={planCategoryId} onChange={(e) => setPlanCategoryId(Number(e.target.value))}>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -75,9 +103,9 @@ export const PlansPage = () => {
           </select>
         </label>
         <input type="number" min={0} value={planMinutes} onChange={(e) => setPlanMinutes(Number(e.target.value))} />
-        <span className="muted">минут</span>
+        <span className="muted">{t.minutes}</span>
         <button className="primary-btn" type="submit">
-          Сохранить план
+          {t.save}
         </button>
       </form>
 
@@ -89,12 +117,16 @@ export const PlansPage = () => {
             <li key={plan.id}>
               <div>
                 <strong>{plan.categoryName}</strong>
-                <p className="muted mini">Факт: {formatSeconds(progress?.spentSeconds ?? 0)}</p>
+                <p className="muted mini">
+                  {t.fact}: {formatSeconds(progress?.spentSeconds ?? 0)}
+                </p>
               </div>
               <div className="inline-form">
-                <strong>{plan.targetMinutes} мин</strong>
+                <strong>
+                  {plan.targetMinutes} {t.min}
+                </strong>
                 <button className="ghost-btn" type="button" onClick={() => removePlan(plan.id)}>
-                  Удалить
+                  {t.delete}
                 </button>
               </div>
             </li>

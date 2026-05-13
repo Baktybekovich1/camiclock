@@ -1,8 +1,40 @@
 import { useEffect, useState } from 'react'
 import { camiclockApi } from '../api/camiclockApi'
 import type { User } from '../types'
+import { useSettings } from '../context/SettingsContext'
+
+const text = {
+  en: {
+    title: 'User Admin Panel',
+    name: 'Name',
+    roles: 'Roles',
+    status: 'Status',
+    actions: 'Actions',
+    active: 'Active',
+    disabled: 'Disabled',
+    block: 'Block',
+    unblock: 'Unblock',
+    removeAdmin: 'Remove admin',
+    makeAdmin: 'Make admin',
+  },
+  ru: {
+    title: 'Админ-панель пользователей',
+    name: 'Имя',
+    roles: 'Роли',
+    status: 'Статус',
+    actions: 'Действия',
+    active: 'Активен',
+    disabled: 'Отключен',
+    block: 'Блок',
+    unblock: 'Разблок',
+    removeAdmin: 'Снять админ',
+    makeAdmin: 'Сделать админ',
+  },
+} as const
 
 export const AdminPage = () => {
+  const { locale } = useSettings()
+  const t = text[locale]
   const [users, setUsers] = useState<User[]>([])
 
   const load = () => {
@@ -27,16 +59,16 @@ export const AdminPage = () => {
 
   return (
     <section className="card">
-      <h2>Админ-панель пользователей</h2>
+      <h2>{t.title}</h2>
       <div className="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Email</th>
-              <th>Имя</th>
-              <th>Роли</th>
-              <th>Статус</th>
-              <th>Действия</th>
+              <th>{t.name}</th>
+              <th>{t.roles}</th>
+              <th>{t.status}</th>
+              <th>{t.actions}</th>
             </tr>
           </thead>
           <tbody>
@@ -47,13 +79,13 @@ export const AdminPage = () => {
                   {user.firstName} {user.lastName}
                 </td>
                 <td>{user.roles.join(', ')}</td>
-                <td>{user.isActive ? 'Активен' : 'Отключен'}</td>
+                <td>{user.isActive ? t.active : t.disabled}</td>
                 <td className="btn-row">
                   <button className="ghost-btn" onClick={() => toggleActive(user)}>
-                    {user.isActive ? 'Блок' : 'Разблок'}
+                    {user.isActive ? t.block : t.unblock}
                   </button>
                   <button className="ghost-btn" onClick={() => toggleAdmin(user)}>
-                    {user.roles.includes('ROLE_ADMIN') ? 'Снять админ' : 'Сделать админ'}
+                    {user.roles.includes('ROLE_ADMIN') ? t.removeAdmin : t.makeAdmin}
                   </button>
                 </td>
               </tr>

@@ -4,8 +4,50 @@ import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis
 import { camiclockApi } from '../api/camiclockApi'
 import type { Category, DashboardSummary } from '../types'
 import { elapsedFrom, formatSeconds } from '../utils/time'
+import { useSettings } from '../context/SettingsContext'
+
+const text = {
+  en: {
+    title: 'Focus Panel',
+    day: 'Day',
+    week: 'Week',
+    spent: 'Spent',
+    plan: 'Plan',
+    gap: 'Gap',
+    focusCategory: 'Focus category',
+    startTimer: 'Start timer',
+    addManual: 'Add manually',
+    minutes: 'Minutes',
+    addTime: 'Add time',
+    mobileChart: 'Focus distribution',
+    desktopChart: 'Actual vs plan',
+    toPlan: 'to plan',
+    recent: 'Recent sessions',
+    stop: 'Stop',
+  },
+  ru: {
+    title: 'Фокус-панель',
+    day: 'День',
+    week: 'Неделя',
+    spent: 'Потрачено',
+    plan: 'План',
+    gap: 'Разрыв',
+    focusCategory: 'Категория фокуса',
+    startTimer: 'Старт таймера',
+    addManual: 'Добавить вручную',
+    minutes: 'Минут',
+    addTime: 'Добавить время',
+    mobileChart: 'Распределение фокуса',
+    desktopChart: 'Сравнение факт/план',
+    toPlan: 'к плану',
+    recent: 'Последние сессии',
+    stop: 'Стоп',
+  },
+} as const
 
 export const FocusPage = () => {
+  const { locale } = useSettings()
+  const t = text[locale]
   const [periodType, setPeriodType] = useState<'day' | 'week'>('day')
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
@@ -111,35 +153,35 @@ export const FocusPage = () => {
     <div className="dashboard-grid">
       <section className="card">
         <div className="inline-between">
-          <h2>Фокус-панель</h2>
+          <h2>{t.title}</h2>
           <div className="toggle-wrap">
             <button className={periodType === 'day' ? 'toggle active' : 'toggle'} onClick={() => setPeriodType('day')}>
-              День
+              {t.day}
             </button>
             <button className={periodType === 'week' ? 'toggle active' : 'toggle'} onClick={() => setPeriodType('week')}>
-              Неделя
+              {t.week}
             </button>
           </div>
         </div>
 
         <div className="kpi-row">
           <div className="kpi-card">
-            <p>Потрачено</p>
+            <p>{t.spent}</p>
             <strong>{formatSeconds(summary?.totalSpentSeconds ?? 0)}</strong>
           </div>
           <div className="kpi-card">
-            <p>План</p>
+            <p>{t.plan}</p>
             <strong>{formatSeconds(summary?.totalTargetSeconds ?? 0)}</strong>
           </div>
           <div className="kpi-card">
-            <p>Разрыв</p>
+            <p>{t.gap}</p>
             <strong>{formatSeconds(Math.max(0, summary?.totalGapSeconds ?? 0))}</strong>
           </div>
         </div>
 
         <div className="timer-panel">
           <label className="select-wrap">
-            <span>Категория фокуса</span>
+            <span>{t.focusCategory}</span>
             <select value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(Number(e.target.value))}>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -151,18 +193,18 @@ export const FocusPage = () => {
 
           {!running ? (
             <button className="primary-btn" onClick={startTimer}>
-              Старт таймера
+              {t.startTimer}
             </button>
           ) : (
             <button className="danger-btn" onClick={stopTimer}>
-              Стоп {elapsedFrom(running.startedAt)}
+              {t.stop} {elapsedFrom(running.startedAt)}
             </button>
           )}
         </div>
 
         <form className="inline-form" onSubmit={addManualTime}>
           <label className="select-wrap">
-            <span>Добавить вручную</span>
+            <span>{t.addManual}</span>
             <select value={manualCategoryId} onChange={(e) => setManualCategoryId(Number(e.target.value))}>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -172,7 +214,7 @@ export const FocusPage = () => {
             </select>
           </label>
           <label className="select-wrap">
-            <span>Минут</span>
+            <span>{t.minutes}</span>
             <input
               type="number"
               min={1}
@@ -182,13 +224,13 @@ export const FocusPage = () => {
             />
           </label>
           <button className="ghost-btn" type="submit">
-            Добавить время
+            {t.addTime}
           </button>
         </form>
       </section>
 
       <motion.section className="card wide" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-        <h2>{isMobile ? 'Распределение фокуса' : 'Сравнение факт/план'}</h2>
+        <h2>{isMobile ? t.mobileChart : t.desktopChart}</h2>
         <div className="chart-box">
           {isMobile ? (
             <div className="pie-wrap">
@@ -211,7 +253,9 @@ export const FocusPage = () => {
               </ResponsiveContainer>
               <div className="pie-center">
                 <strong>{formatSeconds(summary?.totalSpentSeconds ?? 0)}</strong>
-                <span>{totalProgressPercent}% к плану</span>
+                <span>
+                  {totalProgressPercent}% {t.toPlan}
+                </span>
               </div>
             </div>
           ) : (
@@ -245,7 +289,7 @@ export const FocusPage = () => {
       </motion.section>
 
       <section className="card wide">
-        <h2>Последние сессии</h2>
+        <h2>{t.recent}</h2>
         <ul className="plain-list">
           {(summary?.recentEntries ?? []).map((entry) => (
             <li key={entry.id}>

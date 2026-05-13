@@ -1,8 +1,32 @@
 import { useEffect, useState } from 'react'
 import { camiclockApi } from '../api/camiclockApi'
 import type { Category } from '../types'
+import { useSettings } from '../context/SettingsContext'
+
+const text = {
+  en: {
+    title: 'Category Management',
+    subtitle: 'Create time categories, pick colors, and edit them in one place.',
+    newCategory: 'New category',
+    color: 'Color',
+    add: 'Add',
+    changeColor: 'Change color',
+    delete: 'Delete',
+  },
+  ru: {
+    title: 'Управление категориями',
+    subtitle: 'Создавайте категории времени, задавайте цвет и редактируйте их в одном месте.',
+    newCategory: 'Новая категория',
+    color: 'Цвет',
+    add: 'Добавить',
+    changeColor: 'Изменить цвет',
+    delete: 'Удалить',
+  },
+} as const
 
 export const CategoriesPage = () => {
+  const { locale } = useSettings()
+  const t = text[locale]
   const [categories, setCategories] = useState<Category[]>([])
   const [newCategory, setNewCategory] = useState({ name: '', color: '#8B5CF6' })
 
@@ -35,17 +59,17 @@ export const CategoriesPage = () => {
 
   return (
     <section className="card">
-      <h2>Управление категориями</h2>
-      <p className="muted">Создавайте категории времени, задавайте цвет и редактируйте их в одном месте.</p>
+      <h2>{t.title}</h2>
+      <p className="muted">{t.subtitle}</p>
 
       <form className="inline-form" onSubmit={createCategory}>
         <input
           value={newCategory.name}
           onChange={(e) => setNewCategory((p) => ({ ...p, name: e.target.value }))}
-          placeholder="Новая категория"
+          placeholder={t.newCategory}
         />
         <label className="color-control">
-          <span>Цвет</span>
+          <span>{t.color}</span>
           <input
             type="color"
             value={newCategory.color}
@@ -53,7 +77,7 @@ export const CategoriesPage = () => {
           />
         </label>
         <button className="primary-btn" type="submit">
-          Добавить
+          {t.add}
         </button>
       </form>
 
@@ -79,7 +103,7 @@ export const CategoriesPage = () => {
                 }}
               />
               <label className="color-control">
-                <span>Изменить цвет</span>
+                <span>{t.changeColor}</span>
                 <input
                   type="color"
                   defaultValue={category.color}
@@ -87,7 +111,7 @@ export const CategoriesPage = () => {
                 />
               </label>
               <button className="ghost-btn" type="button" onClick={() => deleteCategory(category.id)}>
-                Удалить
+                {t.delete}
               </button>
             </div>
           </article>
